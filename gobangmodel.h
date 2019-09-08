@@ -71,10 +71,15 @@ private:
     int calculateMapMask(vector<vector<int> > board);
     bool getNewBoardStatus(Status &oldStatus, Status &newStatus);
 
+<<<<<<< HEAD
     // AI 落子计算函数
     pair<int, int> simpleAiDrop(vector<vector<int> > board);
     pair<int, int> alphaBetaDrop(vector<vector<int> > board, int level);
     void getPossibleSteps(Status &status);
+=======
+    bool getNewStatus(Status &oldStatus, Status &newStatus);
+    int sortStautusClickVec(Status &status);
+>>>>>>> dev#alpha_beta
 };
 
 #endif // GOBANGMODEL_H
