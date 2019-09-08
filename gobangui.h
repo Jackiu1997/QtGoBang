@@ -27,6 +27,10 @@ private slots:
 
     void on_btn_pvc_clicked();
 
+    void on_btn_reset_clicked();
+
+    void on_btn_exit_clicked();
+
 private:
     const int boardWidth = 15;
     GobangModel gobangModel;

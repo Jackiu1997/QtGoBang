@@ -7,14 +7,18 @@ GobangUI::GobangUI(QWidget *parent) :
     ui(new Ui::GobangUI)
 {
     ui->setupUi(this);
-    this->setMaximumSize(740, 604);
-    this->setMinimumSize(740, 604);
+    this->setMaximumSize(750, 604);
+    this->setMinimumSize(750, 604);
     this->setWindowTitle("Gobang Game");
     this->setWindowIcon(QIcon("://icon/gobang.png"));
 
     drawOrigin = QPoint(0, 0);
     boardOrigin = QPoint(drawOrigin.rx() + 24, drawOrigin.ry() + 24);
 
+    ui->btn_pvp->setIcon(QIcon("://icon/pvp.png"));
+    ui->btn_pvc->setIcon(QIcon("://icon/pvc.png"));
+    ui->btn_reset->setIcon(QIcon("://icon/reset.png"));
+    ui->btn_exit->setIcon(QIcon("://icon/exit.png"));
     boardImg = QImage("://img/board.png");
 }
 
@@ -27,8 +31,18 @@ void GobangUI::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setBrush(QColor("#ffffff"));
+    painter.drawRect(0, 0, 750, 604);
     painter.drawImage(drawOrigin, boardImg);
 
+    // 行棋方表示
+    switch (gobangModel.nowPlayer) {
+    case GobangModel::BLACK: painter.setBrush(QColor("#000000")); break;
+    case GobangModel::WHITE: painter.setBrush(QColor("#ffffff")); break;
+    }
+    painter.drawEllipse(QRect(660, 180, 2*stoneRadius, 2*stoneRadius));
+
+    // 棋子绘制
     if (gobangModel.gameStatus != GobangModel::READY) {
         for (int row = 0; row < boardWidth; row++) {
             for (int col = 0; col < boardWidth; col++) {
@@ -36,8 +50,7 @@ void GobangUI::paintEvent(QPaintEvent *event)
                            boardOrigin.ry() + (2*row-1)* stoneRadius,
                            2*stoneRadius - 4, 2*stoneRadius - 4);
                 switch (gobangModel.gameBoard[row][col]) {
-                case 0:
-                    break;
+                case 0: break;
                 case 1: // 黑棋
                     painter.setBrush(QColor("#000000"));
                     painter.drawEllipse(rect);
@@ -45,8 +58,6 @@ void GobangUI::paintEvent(QPaintEvent *event)
                 case -1: // 白棋
                     painter.setBrush(QColor("#ffffff"));
                     painter.drawEllipse(rect);
-                    break;
-                default:
                     break;
                 }
             }
@@ -63,13 +74,19 @@ void GobangUI::mousePressEvent(QMouseEvent *event)
         bool clickArea = getClickRowCol(clickPos, row, col);
 
         if (clickArea) {
-            gobangModel.placeStone(row, col);
-            repaint();
-            Sleep(500);
+            switch (gobangModel.gameMode) {
+            case GobangModel::PVP:
+                gobangModel.gameOneStep(row, col, gobangModel.nowPlayer);
+                repaint();
+                Sleep(500);
+                break;
 
-            if (gobangModel.gameMode == GobangModel::PVC) {
+            case GobangModel::PVC:
+                gobangModel.gameOneStep(row, col, GobangModel::BLACK);
+                repaint();
                 gobangModel.aiDropStone();
                 repaint();
+                break;
             }
         }
     }
@@ -104,11 +121,34 @@ void GobangUI::checkWinDead() {
 void GobangUI::on_btn_pvp_clicked()
 {
     gobangModel.startPVP();
+    QMessageBox::information(this, "", "PVP GAME START! PLEASE DROP STONE!");
     repaint();
 }
 
 void GobangUI::on_btn_pvc_clicked()
 {
     gobangModel.startPVC();
+    QMessageBox::information(this, "", "PVC GAME START! PLEASE DROP STONE!");
     repaint();
+}
+
+void GobangUI::on_btn_reset_clicked()
+{
+    switch (gobangModel.gameMode) {
+    case GobangModel::PVP:
+        gobangModel.startPVP();
+        QMessageBox::information(this, "", "PVP GAME START! PLEASE DROP STONE!");
+        break;
+    case GobangModel::PVC:
+        gobangModel.startPVC();
+        QMessageBox::information(this, "", "PVC GAME START! PLEASE DROP STONE!");
+        break;
+    }
+
+    repaint();
+}
+
+void GobangUI::on_btn_exit_clicked()
+{
+    this->close();
 }

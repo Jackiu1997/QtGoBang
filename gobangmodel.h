@@ -9,33 +9,37 @@ using std::stack;
 using std::pair;
 using std::make_pair;
 
-// 评分表项目
+// AI评分表项目
 struct MaskItem {
     vector<int> typeVec;
     int stoneNum;
     int mask;
 };
 
-// 搜索结点状态栈
+// AI搜索状态
 struct Status {
-    int stoneType; // 当前状态落子类型
-    int nowIndex;
-    int nodeMask;
+    int alpha;
+    int beta;
+
+    int dropType; // 当前状态落子类型
+    int nowStep;
+    int bestStep;
+
     vector<vector<int> > board;
-    vector<pair<int, int> > clickVec;
+    vector<pair<int, int> > stepVec;
 
     Status() {}
-    Status(int type, vector<vector<int> > b) : stoneType(type), board(b), nowIndex(0), nodeMask(0) {
-        int width = board.size();
-        for (int row = 0; row < width; row++) {
-            for (int col = 0; col < width; col++) {
-                if (board[row][col] == 0)
-                    clickVec.push_back(make_pair(row, col));
-            }
-        }
-    }
+    Status(int type, vector<vector<int> > b)
+        : alpha(-99999999),
+          beta(99999999),
+          dropType(type),
+          nowStep(0),
+          bestStep(0),
+          board(b)
+    {}
 };
 
+// 五子棋游戏模型
 class GobangModel
 {
 public:
@@ -44,30 +48,33 @@ public:
     enum GameStatus{READY, PLAYING, WIN, DEAD} gameStatus;
 
     const int boardWidth = 15;
-    vector<vector<int>> gameBoard;
-
-    vector<MaskItem> maskTable; // 评分表
+    vector<vector<int> > gameBoard;
 
     GobangModel();
     void initGameBoard();
     void startPVP();
     void startPVC();
-    void placeStone(int row, int col);
+    void gameOneStep(int row, int col, Player player);
 
     void aiDropStone();
 private:
+    vector<MaskItem> maskTable; // 评分表
 
+    // 游戏胜负判断
     bool judgeWinner(vector<vector<int> > board);
     bool judgeDead(vector<vector<int> > board);
 
+    // AI 功能辅助函数
     bool generateMaskTable();
     bool isContainType(vector<int> line, vector<int> type);
     int calculateLineMask(vector<int> line);
     int calculateMapMask(vector<vector<int> > board);
-    pair<int, int> alphaBetaCut(vector<vector<int> > board);
+    bool getNewBoardStatus(Status &oldStatus, Status &newStatus);
 
-    bool getNewStatus(Status &oldStatus, Status &newStatus);
-    int sortStautusClickVec(Status &status, int level);
+    // AI 落子计算函数
+    pair<int, int> simpleAiDrop(vector<vector<int> > board);
+    pair<int, int> alphaBetaDrop(vector<vector<int> > board, int level);
+    void getPossibleSteps(Status &status);
 };
 
 #endif // GOBANGMODEL_H

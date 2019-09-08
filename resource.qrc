@@ -2,5 +2,10 @@
     <qresource prefix="/">
         <file>img/board.png</file>
         <file>icon/gobang.png</file>
+        <file>icon/exit.png</file>
+        <file>icon/pvc.png</file>
+        <file>icon/pvp.png</file>
+        <file>icon/reset.png</file>
+        <file>icon/gobang.ico</file>
     </qresource>
 </RCC>
