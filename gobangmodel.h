@@ -67,7 +67,7 @@ private:
     pair<int, int> alphaBetaCut(vector<vector<int> > board);
 
     bool getNewStatus(Status &oldStatus, Status &newStatus);
-    int sortStautusClickVec(Status &status, int level);
+    int sortStautusClickVec(Status &status);
 };
 
 #endif // GOBANGMODEL_H

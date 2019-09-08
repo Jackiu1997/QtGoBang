@@ -145,20 +145,38 @@ bool GobangModel::judgeDead(vector<vector<int> > board)
 
 // AI
 void GobangModel::aiDropStone() {
-    int whiteCount = 0;
+    int row, col, whiteCount = 0;
     for (int i = 0; i < boardWidth; i++) {
         for (int j = 0; j < boardWidth; j++) {
-            if (gameBoard[i][j] == -1) whiteCount++;
+            if (gameBoard[i][j] == -1) {
+                whiteCount++;
+                row = i; col =j;
+            }
         }
     }
 
-    if (whiteCount == 0 || whiteCount == 1) {
-        int row = rand() % 5 + 5;
-        int col = rand() % 5 + 5;
+    if (whiteCount == 0) {
+        row = rand() % 5 + 5;
+        col = rand() % 5 + 5;
         if (gameBoard[row][col] != 0) {
             placeStone(row - 1, col);
         } else placeStone(row, col);
-    } else {
+    }
+    else if (whiteCount == 1) {
+        if (gameBoard[row-1][col] == 0) {
+            placeStone(row - 1, col);
+        }
+        else if (gameBoard[row+1][col] == 0) {
+            placeStone(row + 1, col);
+        }
+        else if (gameBoard[row][col+1] == 0) {
+            placeStone(row, col+1);
+        }
+        else if (gameBoard[row][col-1] == 0) {
+            placeStone(row, col-1);
+        }
+    }
+    else {
         pair<int,int> aiDrop = alphaBetaCut(gameBoard);
         placeStone(aiDrop.first, aiDrop.second);
     }
@@ -313,7 +331,7 @@ int GobangModel::sortStautusClickVec(Status &status) {
         newBoard[row][col] = status.stoneType;
 
         int mask = calculateMapMask(newBoard);
-        maskSort(make_pair(index, mask));
+        maskSort.push_back(make_pair(index, mask));
     }
 
     if (status.stoneType == 1)
@@ -346,7 +364,7 @@ bool GobangModel::getNewStatus(Status &oldStatus, Status &newStatus) {
 }
 
 pair<int, int> GobangModel::alphaBetaCut(vector<vector<int> > board) {
-    int level = 2;
+    int level = 4;
     int alpha = -10000000, beta = 10000000;
     vector<pair<int, int> > bestClickVec;
 
@@ -359,13 +377,11 @@ pair<int, int> GobangModel::alphaBetaCut(vector<vector<int> > board) {
     while (!statusStack.empty()) {
         int stackSize = statusStack.size();
         Status nowStatus = statusStack.top();
-        nowStatus.nodeMask = stackSize == level ?
-                    calculateMapMask(nowStatus.board) : nowStatus.nodeMask;
         int nowMask = nowStatus.nodeMask;
 
         // 获取新状态，深度遍历
         Status newStatus;
-        if (stackSize != level && getNewStatus(nowStatus, newStatus)) {
+        if (stackSize != level-1 && getNewStatus(nowStatus, newStatus)) {
             statusStack.pop();
             statusStack.push(nowStatus);
             statusStack.push(newStatus);
@@ -375,41 +391,24 @@ pair<int, int> GobangModel::alphaBetaCut(vector<vector<int> > board) {
         // 递归退栈规则
         statusStack.pop();
         Status parent = statusStack.top();
-        switch (statusStack.size() + 1) {
-        case 5:
-            // alpha剪枝
-            if (alpha != -10000000 && nowMask <= alpha) {
-                statusStack.pop();
-                alphaCut++;
-                continue;
-            }
-            beta = nowMask < beta ? nowMask : beta;
-            parent.nodeMask = beta;
-            break;
-        case 4:
-            // beta剪枝
-            if (beta != 10000000 && nowMask >= beta) {
-                statusStack.pop();
-                betaCut++;
-                continue;
-            }
-            alpha = nowMask > alpha ? nowMask : alpha;
-            parent.nodeMask = alpha;
-            break;
+
+        switch (stackSize) {
         case 3:
-            // alpha剪枝
+            nowMask = sortStautusClickVec(nowStatus);
+            // alpha Cut
             if (alpha != -10000000 && nowMask <= alpha) {
-                statusStack.pop();
                 if (nowMask == alpha) {
-                    Status root = statusStack.top();
-                    bestClickVec.push_back(root.clickVec[parent.nowIndex - 1]);
+                    bestClickVec.push_back(parent.clickVec[parent.nowIndex - 1]);
                 }
+                statusStack.pop();
                 alphaCut++;
                 continue;
             }
             beta = nowMask < beta ? nowMask : beta;
             parent.nodeMask = beta;
-            break;
+            statusStack.pop();
+            statusStack.push(parent);
+            continue;
         case 2:
             if (nowMask == alpha) {
                 bestClickVec.push_back(parent.clickVec[parent.nowIndex - 1]);
@@ -419,17 +418,40 @@ pair<int, int> GobangModel::alphaBetaCut(vector<vector<int> > board) {
                 bestClickVec.clear();
                 bestClickVec.push_back(parent.clickVec[parent.nowIndex - 1]);
             }
-            break;
+            statusStack.pop();
+            statusStack.push(parent);
+            continue;
         case 1:
             statusStack.pop();
             continue;
         }
 
+        /*
+        switch (stackSize % 2) {
+        case 0: // 偶数层 min beta剪枝
+            if (beta != 10000000 && nowMask >= beta) {
+                statusStack.pop();
+                betaCut++;
+                continue;
+            }
+            alpha = nowMask > alpha ? nowMask : alpha;
+            parent.nodeMask = alpha;
+            break;
+        case 1: // 奇数层 max alpha剪枝
+            if (alpha != -10000000 && nowMask <= alpha) {
+                statusStack.pop();
+                alphaCut++;
+                continue;
+            }
+            beta = nowMask < beta ? nowMask : beta;
+            parent.nodeMask = beta;
+            break;
+        }
         statusStack.pop();
         statusStack.push(parent);
+        */
     }
 
-    //srand(time(NULL));
-    //return bestClickVec[rand() % bestClickVec.size()];
-    return bestClickVec[0];
+    srand(time(NULL));
+    return bestClickVec[rand() % bestClickVec.size()];
 }
